@@ -76,6 +76,7 @@ decllist_re  = re.compile('\s*;\s*')
 typedef_re   = re.compile('^typedef\s+(?:struct\s+)?(\S+)\s+(\S+);')
 version_re   = re.compile('\d+[.]\d+[.]\d+.*')
 xncallback_re = re.compile('\(XN_CALLBACK_TYPE\*\s+(\S+)\)')
+callbackdef_re = re.compile('typedef\s+(\w+)\s+\(XN_CALLBACK_TYPE\*\s+(\w+)\)\((.+)\);')
 
 def endot(text):
     """Terminate string with a period.
@@ -375,6 +376,7 @@ class Parser(object):
         self.funcs = []
         self.structs = []
         self.privates = []
+        self.callbacks = []
 
         self.typedefs = {}
 
@@ -386,6 +388,7 @@ class Parser(object):
             self.enums.extend(self.parse_enums())
             self.funcs.extend(self.parse_funcs())
             self.structs.extend(self.parse_structs())
+            self.callbacks.extend(self.parse_callbacks())
 
         # Handle private structs
         for new, original in self.typedefs.iteritems():
@@ -420,6 +423,9 @@ class Parser(object):
     def dump_privates(self):  # for debug
         self.__dump('privates')
 
+    def dump_callbacks(self):  # for debug
+        self.__dump('callbacks')
+    
     def parse_enums(self):
         """Parse header file for enum type definitions.
 
@@ -505,7 +511,28 @@ class Parser(object):
         """
         return dict( (new, original) 
             for original, new, docs, line in self.parse_groups(typedef_re.match, typedef_re.match) )
-        
+
+    def parse_callbacks(self):
+        """Parse header file for callback signature definitions.
+
+        @return: Yield a Func for each callback
+        """
+        for rettype, name, pars, docs, line in self.parse_groups(callbackdef_re.match, callbackdef_re.match, '\);$'):
+
+            f = self.parse_param(name)
+            pars = [self.parse_param(p) for p in paramlist_re.split(pars)]
+
+            if len(pars) == 1 and pars[0].type == 'void':
+                pars = []  # no parameters
+                
+            missing = [ p for p in pars if not p.name ]
+            if missing:
+                print "Missing parameter", p.type
+                continue
+
+            yield Func(name, rettype, pars, docs,
+                       file_=self.h_file, line=line)
+
     def parse_groups(self, match_t, match_re, end_block_re=';$'):
         """Parse header file for matching lines, re and ends.
 
@@ -631,6 +658,7 @@ class _Generator(object):
         self.convert_classnames('enum')
         self.convert_classnames('struct')
         self.convert_classnames('private')
+        self.convert_classnames('callback')
 
     def check_types(self):
         """Make sure that all types are properly translated.
@@ -662,8 +690,6 @@ class _Generator(object):
             if e.name in self.type2class:
                 # Do not override predefined values
                 continue
-            if e.type != source:
-                raise TypeError('expected %s: %s %s' % (source, e.type, e.name))
 
             c = self.type_re.findall(e.name)
             if c:
@@ -784,18 +810,6 @@ class PythonGenerator(_Generator):
         'XnNodeQuery**': 'ctypes.POINTER(NodeQuery)',
         'XnEnumerationErrors*': 'EnumerationErrors',
 
-        'XnStateChangedHandler': 'CALLBACK',
-        'XnCalibrationEnd': 'CALLBACK',
-        'XnCalibrationStart': 'CALLBACK',
-        'XnErrorStateChangedHandler': 'CALLBACK',
-        'XnGestureProgress': 'CALLBACK',
-        'XnGestureRecognized': 'CALLBACK',
-        'XnHandCreate': 'CALLBACK',
-        'XnHandDestroy': 'CALLBACK',
-        'XnHandUpdate': 'CALLBACK',
-        'XnPoseDetectionCallback': 'CALLBACK',
-        'XnUserHandler': 'CALLBACK',
-
         'XnNodeHandle': 'NodeHandle',
         'XnNodeHandle*': 'ctypes.POINTER(NodeHandleProxy)',
 
@@ -855,6 +869,8 @@ class PythonGenerator(_Generator):
         'Context',
         'NodeHandle',
         'NodeQuery',
+        'EnumerationErrors',
+        'NodeInfoList',
     )
 
     def __init__(self, parser=None):
@@ -885,11 +901,11 @@ class PythonGenerator(_Generator):
         # prefixes to strip from method names
         # when wrapping them into class methods
         self.prefixes = {}
-        for t, c in self.type2class.items():
+        for t, c in self.type2class.iteritems():
             t = t.rstrip('*')
             if c in self.defined_classes:
                 self.links[t] = c
-                self.prefixes[c] = t[:-1]
+                self.prefixes[c] = t.replace('Xn', 'xn')
             elif c.startswith('ctypes.POINTER('):
                 c = c.replace('ctypes.POINTER(', '') \
                      .rstrip(')')
@@ -935,6 +951,40 @@ class PythonGenerator(_Generator):
         %(name)s = f
     return f(%(args)s)
 """ % locals())
+
+    def generate_callbacks(self):
+        """Generate decorators for callback functions.
+        
+        We generate both decorators (for defining functions) and
+        associated classes, to help in defining function signatures.
+        """
+        if not self.parser.callbacks:
+            return
+        # Generate classes
+        for f in self.parser.callbacks:
+            name = self.class4(f.name)  #PYCHOK flake
+            docs = self.epylink(f.docs)
+            self.output("""class %(name)s(ctypes.c_void_p):
+    '''%(docs)s
+    '''
+    pass""" % locals())
+
+        self.output("class CallbackDecorators(object):")
+        self.output('    "Class holding various method decorators for callback functions."')
+        for f in self.parser.callbacks:
+            name = self.class4(f.name)  #PYCHOK flake
+
+            # return value and arg classes
+            types = ', '.join([self.class4(f.type)] +  #PYCHOK flake
+                              [self.class4(p.type) for p in f.pars])
+
+            # xformed doc string with first @param
+            docs = self.epylink(f.docs)
+
+            self.output("""    %(name)s = ctypes.CFUNCTYPE(%(types)s)
+    %(name)s.__doc__ = '''%(docs)s
+    '''""" % locals())
+        self.output("cb = CallbackDecorators")
 
     def generate_enums(self):
         """Generate classes for all enum types.
@@ -998,7 +1048,7 @@ class _Enum(ctypes.c_ulong):
         #import pdb; pdb.set_trace()
         for e in self.parser.privates:
             cls = self.class4(e.name)
-            if "%s(_Ctype)" % cls in self.overrides[1]:
+            if "%s" % cls in self.overrides[1]:
                 continue
             self.output("""class %s(_Ctype):
     '''Private object
@@ -1141,6 +1191,7 @@ class _Enum(ctypes.c_ulong):
 
         self.generate_wrappers()
         self.generate_ctypes()
+        self.generate_callbacks()
 
         self.unwrapped()
 
@@ -1208,6 +1259,7 @@ Parse include files and generate bindings code for Python.""")
         p.dump_enums()
         p.dump_structs()
         p.dump_funcs()
+        p.dump_callbacks()
 
     if opts.check:
         p.check()
