@@ -12,4 +12,18 @@ def debug_callback(event, *args, **kwds):
     print('Debug callback (%s)' % ', '.join(l))
 
 if __name__ == '__main__':
-    pass
+    c = Context()
+    err = EnumerationErrors()
+
+    q=NodeQuery()
+    q.SetCreationInfo("Foo")
+    q.AddSupportedCapability("Mirror")
+    output = MapOutputMode(640, 480, 30)
+    q.AddSupportedMapOutputMode(output)    
+    c.CreateDepthGenerator(q, err)
+    
+    u = c.CreateUserGenerator(q, err)
+    if not u.IsCapabilitySupported('User::Skeleton'):
+        raise "Unable to create UserGenerator"
+
+    
