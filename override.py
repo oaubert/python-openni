@@ -30,3 +30,42 @@ class Context(_Ctype):
     def StatusString(self, status):
         return dll.xnGetStatusString(status)
 
+class NodeQuery(_Ctype):
+    """Create a new NodeQuery instance.
+
+    # FIXME: handle destruction
+    """
+    def __new__(cls, *args):
+        if args and args[0]:
+            p = args[0]
+        else:
+            p = ctypes.c_void_p()
+            dll.xnNodeQueryAllocate(ctypes.byref(p))
+        return _Cobject(cls, p)
+
+class EnumerationErrors(_Ctype):
+    """Create a new EnumerationErrors instance.
+
+    # FIXME: handle destruction
+    """
+    def __new__(cls, *args):
+        if args and args[0]:
+            p = args[0]
+        else:
+            p = ctypes.c_void_p()
+            dll.xnEnumerationErrorsAllocate(ctypes.byref(p))
+        return _Cobject(cls, p)
+
+class NodeInfoList(_Ctype):
+    """Create a new NodeInfoList instance.
+
+    # FIXME: handle destruction
+    """
+    def __new__(cls, *args):
+        if args and args[0]:
+            p = args[0]
+        else:
+            p = ctypes.c_void_p()
+            dll.xnNodeInfoListAllocate(ctypes.byref(p))
+        return _Cobject(cls, p)
+
