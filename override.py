@@ -14,14 +14,13 @@ class Context(_Ctype):
                 err = EnumerationErrors()
                 status = dll.xnInitFromXmlFile(i, p, err)
                 if status:
-                    raise Exception("Error %s: %s" % (dll.xnGetStatusName(status),
-                                                      dll.xnGetStatusString(status)))
-
+                    xnPrintError(status, "Context creation")
+                    return None
         p = ctypes.c_void_p()
         status = dll.xnInit(ctypes.byref(p))
         if status:
-            raise Exception("Error %s: %s" % (dll.xnGetStatusName(status),
-                                              dll.xnGetStatusString(status)))
+            xnPrintError(status, "Context creation")
+            return None
         return _Cobject(cls, p)
 
     def StatusName(self, status):
@@ -40,7 +39,10 @@ class NodeQuery(_Ctype):
             p = args[0]
         else:
             p = ctypes.c_void_p()
-            dll.xnNodeQueryAllocate(ctypes.byref(p))
+            status = dll.xnNodeQueryAllocate(ctypes.byref(p))
+            if status:
+                xnPrintError(status, "NodeQuery creation")
+                return None
         return _Cobject(cls, p)
 
 class EnumerationErrors(_Ctype):
@@ -53,7 +55,10 @@ class EnumerationErrors(_Ctype):
             p = args[0]
         else:
             p = ctypes.c_void_p()
-            dll.xnEnumerationErrorsAllocate(ctypes.byref(p))
+            status = dll.xnEnumerationErrorsAllocate(ctypes.byref(p))
+            if status:
+                xnPrintError(status, "EnumerationErrors creation")
+                return None
         return _Cobject(cls, p)
 
 class NodeInfoList(_Ctype):
@@ -66,6 +71,10 @@ class NodeInfoList(_Ctype):
             p = args[0]
         else:
             p = ctypes.c_void_p()
-            dll.xnNodeInfoListAllocate(ctypes.byref(p))
+            status = dll.xnNodeInfoListAllocate(ctypes.byref(p))
+            if status:
+                xnPrintError(status, "NodeInfoList creation")
+                return None
+
         return _Cobject(cls, p)
 
