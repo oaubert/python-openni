@@ -964,10 +964,10 @@ class PythonGenerator(_Generator):
         for f in self.parser.callbacks:
             name = self.class4(f.name)  #PYCHOK flake
             docs = self.epylink(f.docs)
-            self.output("""class %(name)s(ctypes.c_void_p):
-    '''%(docs)s
-    '''
-    pass""" % locals())
+            self.output('''class %(name)s(ctypes.c_void_p):
+    """%(docs)s
+    """
+    pass''' % locals())
 
         self.output("class CallbackDecorators(object):")
         self.output('    "Class holding various method decorators for callback functions."')
