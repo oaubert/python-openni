@@ -77,6 +77,7 @@ typedef_re   = re.compile('^typedef\s+(?:struct\s+)?(\S+)\s+(\S+);')
 version_re   = re.compile('\d+[.]\d+[.]\d+.*')
 xncallback_re = re.compile('\(XN_CALLBACK_TYPE\*\s+(\S+)\)')
 callbackdef_re = re.compile('typedef\s+(\w+)\s+\(XN_CALLBACK_TYPE\*\s+(\w+)\)\((.+)\);')
+define_re    = re.compile('^#define\s+(XN_\S+)\s+(\S+)')
 
 def endot(text):
     """Terminate string with a period.
@@ -191,6 +192,9 @@ class PrivateObject(_Source):
         if _debug:
            _Source.__init__(self, **kwds)
 
+    def dump(self):  # for debug
+        print('%s (%s): %s' % (self.name, self.type, self.source))
+
 class Flag(object):
     """Enum-like, ctypes parameter direction flag constants.
     """
@@ -198,7 +202,6 @@ class Flag(object):
     Out    = 2  # output only
     InOut  = 3  # in- and output
     InZero = 4  # input, default int 0
-    InOutZero = 6 # in- and output, default 0
     def __init__(self):
         raise TypeError('constants only')
 
@@ -380,6 +383,8 @@ class Parser(object):
         self.structs = []
         self.privates = []
         self.callbacks = []
+        # Meaningful defines
+        self.defines = {}
 
         self.typedefs = {}
 
@@ -392,6 +397,7 @@ class Parser(object):
             self.funcs.extend(self.parse_funcs())
             self.structs.extend(self.parse_structs())
             self.callbacks.extend(self.parse_callbacks())
+            self.defines.update(self.parse_defines())
 
         # Handle private structs
         for new, original in self.typedefs.iteritems():
@@ -429,6 +435,11 @@ class Parser(object):
     def dump_callbacks(self):  # for debug
         self.__dump('callbacks')
     
+    def dump_defines(self):
+        print('\n=== defines ====')
+        for k in sorted(self.defines):
+            print "  %s = %s" % (k, self.defines[k])
+        
     def parse_enums(self):
         """Parse header file for enum type definitions.
 
@@ -514,6 +525,20 @@ class Parser(object):
         """
         return dict( (new, original) 
             for original, new, docs, line in self.parse_groups(typedef_re.match, typedef_re.match) )
+
+    def parse_defines(self):
+        """Parse header file for useful defines
+
+        @return: a dict instance with defines
+        """
+        res = {}
+        f = opener(self.h_file)
+        for l in f:
+            m = define_re.search(l)
+            if m:
+                res[m.group(1)] = m.group(2)
+        f.close()
+        return res
 
     def parse_callbacks(self):
         """Parse header file for callback signature definitions.
@@ -730,6 +755,7 @@ class _Generator(object):
         f = opener(source)
         for t in f:
             if genums and t.startswith('# GENERATED_ENUMS'):
+                self.generate_defines()
                 self.generate_enums()
             elif genums and t.startswith('# GENERATED_STRUCTS'):
                 self.generate_privates()
@@ -919,6 +945,22 @@ class PythonGenerator(_Generator):
             f.xform()
             self.links[f.name] = f.name
         self.check_types()
+
+    def generate_defines(self):
+        """Generate classes for parsed defines.
+        """
+        for n in ('PROP', 'CAPABILITY'):
+            prefix = 'XN_%s_' % n
+            name = n.capitalize()
+            data = "\n".join( "    %s = %s" % (k.replace(prefix, ''), 
+                                               self.parser.defines[k])
+                              for k in sorted(self.parser.defines)
+                              if k.startswith(prefix) )
+            self.output("""class %(name)s:
+    '''%(prefix)s* constants
+    '''
+%(data)s
+""" % locals())
 
     def generate_ctypes(self):
         """Generate a ctypes decorator for all functions.
@@ -1264,6 +1306,8 @@ Parse include files and generate bindings code for Python.""")
         p.dump_enums()
         p.dump_structs()
         p.dump_funcs()
+        p.dump_privates()
+        p.dump_defines()
         p.dump_callbacks()
 
     if opts.check:
