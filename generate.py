@@ -1115,6 +1115,8 @@ class _Enum(ctypes.c_ulong):
 
             # method name is function name less prefix
             meth = striprefix(name)
+            # Lowercase first character
+            meth = meth[0].lower() + meth[1:]
             if meth in methods.get(cls, []):
                 continue  # overridden
 
