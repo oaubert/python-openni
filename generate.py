@@ -198,6 +198,7 @@ class Flag(object):
     Out    = 2  # output only
     InOut  = 3  # in- and output
     InZero = 4  # input, default int 0
+    InOutZero = 6 # in- and output, default 0
     def __init__(self):
         raise TypeError('constants only')
 
@@ -319,6 +320,7 @@ class Par(object):
                  Flag.Out:    'Out',
                  Flag.InOut:  'InOut',
                  Flag.InZero: 'InZero',
+                 Flag.InOutZero: 'InOutZero',
                 }.get(self.flags()[0], 'FIXME_Flag')
         print('%s%s (%s) %s' % (_INDENT_, self.name, self.type, t))
 
@@ -342,6 +344,7 @@ class Par(object):
         else:
             f = {'int*':      Flag.Out,
                  'unsigned*': Flag.Out,
+                 'XnEnumerationErrors*': Flag.InOutZero,
                 }.get(self.type, Flag.In)  # default
         if default is None:
             return f,  # 1-tuple
