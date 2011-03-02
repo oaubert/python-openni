@@ -803,7 +803,7 @@ class _Generator(object):
         """Report the unwrapped and blacklisted functions.
         """
         b = [f for f, t in _blacklist.items() if t]
-        u = [f.name for f in self.parser.funcs if not f.wrapped]
+        u = ["%s (%s)" % (f.name, (f.pars and self.class4(f.pars[0].type)) or "None") for f in self.parser.funcs if not f.wrapped]
         c = self.comment_line
         for f, t in ((b, 'blacklisted'),
                      (u, 'not wrapped as methods')):
