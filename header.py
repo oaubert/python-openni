@@ -105,15 +105,13 @@ class ListPOINTER(object):
         if isinstance(param, _Seqs):
             return (self.etype * len(param))(*param)
 
-class NodeHandleProxy(ctypes.c_void_p):
-    def __OLDnew__(cls, *args):
-        print "NEW code", args
-        if args and args[0]:
-            return NodeHandle(args[0])
-        else:
-            return ctypes.c_void_p()
+class NodeHandleReference(ctypes.c_void_p):
+    pass
 
-class CALLBACK(ctypes.c_void_p):
+class NodeInfoListReference(ctypes.c_void_p):
+    pass
+
+class EnumerationErrorsIterator(ctypes.c_void_p):
     pass
 
  # Generated enum types #

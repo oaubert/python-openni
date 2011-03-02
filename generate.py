@@ -346,7 +346,7 @@ class Par(object):
         else:
             f = {'int*':      Flag.Out,
                  'unsigned*': Flag.Out,
-                 'XnEnumerationErrors*': Flag.InOutZero,
+                 'XnEnumerationErrors*': Flag.Out,
                 }.get(self.type, Flag.In)  # default
         if default is None:
             return f,  # 1-tuple
@@ -823,23 +823,30 @@ class PythonGenerator(_Generator):
         # Internal classes
         'XnContext*': 'Context',
         'XnContext**': 'ctypes.POINTER(Context)',
-        #'XnNodeInfoListNode*': 'NodeInfoListNode',
-        'XnNodeInfoListNode*': 'ctypes.c_void_p',
-        'XnLockData': 'LockData',
-        'XnGestureRecognizedParams': 'GestureRecognizedParams',
-        'XnGestureProgressParams': 'GestureProgressParams',
-        'XnNodeInfo*': 'NodeInfo',
 
+        'XnLockData': 'LockData',
+
+        #'XnGestureRecognizedParams': 'GestureRecognizedParams',
+        #'XnGestureProgressParams': 'GestureProgressParams',
+
+        'XnNodeInfo*': 'NodeInfo',
+        'XnNodeInfoListNode*': 'NodeInfoListNode',
+        #'XnNodeInfoListNode*': 'ctypes.c_void_p',
         'XnNodeInfoList*': 'NodeInfoList', 
-        'XnNodeInfoList**': 'ctypes.POINTER(NodeInfoList)', 
+        'XnNodeInfoList**': 'ctypes.POINTER(NodeInfoListReference)', 
 
         'XnNeededNodeData': 'NeededNodeData',
         'XnNodeQuery*': 'NodeQuery',
         'XnNodeQuery**': 'ctypes.POINTER(NodeQuery)',
         'XnEnumerationErrors*': 'EnumerationErrors',
+        'XnEnumerationErrors**': 'ctypes.POINTER(EnumerationErrors)',
+        'XnEnumerationErrorsIterator': 'EnumerationErrorsIterator',
+
+        'XnProductionNodeType*': 'ctypes.POINTER(ProductionNodeType)',
+        'XnPixelFormat*': 'ctypes.POINTER(PixelFormat)',
 
         'XnNodeHandle': 'NodeHandle',
-        'XnNodeHandle*': 'ctypes.POINTER(NodeHandleProxy)',
+        'XnNodeHandle*': 'ctypes.POINTER(NodeHandleReference)',
 
         'XnSkeletonJoint*': 'ctypes.POINTER(SkeletonJoint)',
         'XnRecordMedium*': 'ctypes.POINTER(RecordMedium)',
@@ -1094,13 +1101,10 @@ class _Enum(ctypes.c_ulong):
             cls = self.class4(e.name)
             if "%s" % cls in self.overrides[1]:
                 continue
-            self.output("""class %s(_Ctype):
+            self.output("""class %s(ctypes.c_void_p):
     '''Private object
     '''
-    def __new__(cls, ptr=None):
-        '''(INTERNAL) ctypes wrapper constructor.
-        '''
-        return _Constructor(cls, ptr)
+    pass
 """ % cls)
 
     def generate_wrappers(self):
@@ -1171,17 +1175,26 @@ class _Enum(ctypes.c_ulong):
             # xformed doc string without first @param
             docs = self.epylink(f.epydocs(1, 8), striprefix)  #PYCHOK flake
 
+            # Add a line with return types
+            docs += "\nParameter types: " + ', '.join([self.class4(p.type) for p in f.pars])
+
             # FIXME: more generic ??
             #outparams = [ p for p in f.pars if p.isOut() ]
 
             # Hackish way to handle an opaque type (XnNodeHandle is an
-            # opaque ctypes.POINTER(ctypes.c_void_p)).
-            # Works for now, something better should clearly be found.
-            if 'XnNodeHandle*' in [p.type for p in f.pars ]:
+            # opaque ctypes.POINTER(ctypes.c_void_p)).  Works for now,
+            # something better should clearly be found: a list of
+            # wrapped opaque types should be defined, and converted
+            # through ctypes errcheck?
+            references = [ self.class4(p.type) for p in f.pars if 'Reference' in self.class4(p.type) ]
+            #print "REFERENCES", f.name, references
+            if len(references) == 1:
+                # We can convert to the appropriate type
+                ref = re.findall('ctypes.POINTER\((.+)Reference\)', references[0])[0]
                 self.output("""    def %(meth)s(%(args)s):
         '''%(docs)s
         '''
-        return NodeHandle(%(name)s(%(args)s))
+        return %(ref)s(%(name)s(%(args)s))
 """ % locals())
             else:
                 self.output("""    def %(meth)s(%(args)s):
