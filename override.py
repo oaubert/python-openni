@@ -12,7 +12,7 @@ class Context(_Ctype):
                 # Init from XML file
                 p = ctypes.c_void_p()
                 err = EnumerationErrors()
-                status = dll.xnInitFromXmlFile(i, p, err)
+                status = dll.xnInitFromXmlFile(i, ctypes.byref(p), err)
                 if status:
                     xnPrintError(status, "Context creation")
                     return None
@@ -22,12 +22,6 @@ class Context(_Ctype):
             xnPrintError(status, "Context creation")
             return None
         return _Cobject(cls, p)
-
-    def StatusName(self, status):
-        return dll.xnGetStatusName(status)
-
-    def StatusString(self, status):
-        return dll.xnGetStatusString(status)
 
 class NodeQuery(_Ctype):
     """Create a new NodeQuery instance.

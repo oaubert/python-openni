@@ -323,7 +323,6 @@ class Par(object):
                  Flag.Out:    'Out',
                  Flag.InOut:  'InOut',
                  Flag.InZero: 'InZero',
-                 Flag.InOutZero: 'InOutZero',
                 }.get(self.flags()[0], 'FIXME_Flag')
         print('%s%s (%s) %s' % (_INDENT_, self.name, self.type, t))
 
