@@ -1,7 +1,8 @@
 GEN=generate.py
 PY=ni.py
-#INCLUDES=/usr/include/ni/XnStatus.h /usr/include/ni/XnTypes.h XnInternalTypes.h  /usr/include/ni/XnQueries.h /usr/include/ni/XnContext.h /usr/include/ni/XnPrdNode.h /usr/include/ni/XnEnumerationErrors.h /usr/include/ni/XnUtils.h /usr/include/ni/XnPrdNodeInfoList.h /usr/include/ni/XnPropNames.h
-INCLUDES=/usr/include/ni/XnStatus.h /usr/include/ni/XnTypes.h /usr/include/ni/XnQueries.h /usr/include/ni/XnContext.h /usr/include/ni/XnPrdNode.h /usr/include/ni/XnEnumerationErrors.h /usr/include/ni/XnUtils.h /usr/include/ni/XnPrdNodeInfoList.h /usr/include/ni/XnPropNames.h
+PREFIX=/usr/include
+#INCLUDES=$(PREFIX)/ni/XnStatus.h $(PREFIX)/ni/XnTypes.h XnInternalTypes.h  $(PREFIX)/ni/XnQueries.h $(PREFIX)/ni/XnContext.h $(PREFIX)/ni/XnPrdNode.h $(PREFIX)/ni/XnEnumerationErrors.h $(PREFIX)/ni/XnUtils.h $(PREFIX)/ni/XnPrdNodeInfoList.h $(PREFIX)/ni/XnPropNames.h
+INCLUDES=$(PREFIX)/ni/XnStatus.h $(PREFIX)/ni/XnTypes.h $(PREFIX)/ni/XnQueries.h $(PREFIX)/ni/XnContext.h $(PREFIX)/ni/XnPrdNode.h $(PREFIX)/ni/XnEnumerationErrors.h $(PREFIX)/ni/XnUtils.h $(PREFIX)/ni/XnPrdNodeInfoList.h $(PREFIX)/ni/XnPropNames.h
 
 all: validate
 
@@ -11,7 +12,6 @@ validate: $(PY)
 
 $(PY): Makefile $(GEN) override.py header.py footer.py $(INCLUDES)
 	python $(GEN) -o $@  $(INCLUDES)
-	#python $(GEN) -o $@ /usr/include/ni/*.h
 
 clean:
 	-/bin/rm $(PY)
