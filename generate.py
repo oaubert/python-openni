@@ -46,6 +46,7 @@ else:  # Python 3+
 
 # Functions not wrapped/not referenced
 _blacklist = {
+    'xnRegisterModuleWithOpenNI': '',
 }
 
 # some constants
