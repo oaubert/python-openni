@@ -476,8 +476,8 @@ class Parser(object):
         @return: yield a Struct instance for each struct.
         """
         for typ, name, body, docs, line in self.parse_groups(struct_type_re.match, struct_re.match, '^\}(\s+\S+)?;$'):
-            fields = [ self.parse_param(t) for t in decllist_re.split(body) ]
-            fields.remove(None)
+            fields = [ self.parse_param(t) for t in decllist_re.split(body) if not '%s()' % name in t ]
+            fields = [ f for f in fields if f is not None ]
 
             name = name.strip()
             if not name:  # anonymous?
@@ -630,7 +630,13 @@ class Parser(object):
         @return: a Par instance.
         """
         param = param.strip()
+        if param.startswith('}'):
+            # Leftover from structs with constructors.
+            param = param[1:].strip()
         if not param: 
+            return None
+        if '{' in param:
+            # Cannot parse this.
             return None
         t = param.replace('const', '').strip()
         #if _*_FORWARD_ in t:
@@ -702,10 +708,10 @@ class _Generator(object):
                     errorf('no type conversion for %s %s in %s (%s)', p.type, p.name, f.name, f.source)
         errors('%s type conversion(s) missing', e)
 
-    def class4(self, type):
+    def class4(self, c_name):
         """Return the class name for a type or enum.
         """
-        return self.type2class.get(type, '') or ('FIXME_%s' % (type,))
+        return self.type2class.get(c_name, '') or ('FIXME_%s' % (c_name,))
 
     def convert_classnames(self, source):
         """Convert enum names to class names.
@@ -757,7 +763,7 @@ class _Generator(object):
                 self.generate_defines()
                 self.generate_enums()
             elif genums and t.startswith('# GENERATED_STRUCTS'):
-                self.generate_privates()
+                #self.generate_privates()
                 self.generate_structs()
             elif t.startswith("build_date ="):
                 v, t = _NA_, self.parser.version
@@ -941,12 +947,11 @@ class PythonGenerator(_Generator):
         for new, original in parser.typedefs.iteritems():
             if original in self.type2class and not new in self.type2class:
                 self.type2class[new] = self.type2class[original]
-                if new+'*' not in self.type2class:
-                    self.type2class[new+'*'] = 'ctypes.POINTER(%s)' % self.type2class[original]
+                self.type2class.setdefault(new+'*', 'ctypes.POINTER(%s)' % self.type2class[original])
 
         # Generate pointers type2class for structs
         for s in parser.structs:
-            self.type2class[s.name+'*'] = 'ctypes.POINTER(%s)' % self.type2class[s.name]
+            self.type2class.setdefault(s.name+'*', 'ctypes.POINTER(%s)' % self.type2class[s.name])
 
         # link enum value names to enum type/class
 ##      for t in self.parser.enums:
@@ -1102,13 +1107,15 @@ class _Enum(ctypes.c_ulong):
         """
         for e in self.parser.structs:
             cls = self.class4(e.name)
+            if cls in self.overrides[1]:
+                continue
             self.output("""class %s(ctypes.Structure):
     '''%s
     '''
     _fields_ = (""" % (cls, e.epydocs() or _NA_))
 
             for v in e.fields:
-                self.output("        ('%s', %s)," % (v.name, self.class4(v.type)))
+                self.output("        ('%s', %s)," % (v.name, self.class4(v.type).replace('Context', 'ContextReference').replace('NodeHandle', 'NodeHandleReference')))
             self.output('    )')
             self.output('')
 
@@ -1118,7 +1125,7 @@ class _Enum(ctypes.c_ulong):
         #import pdb; pdb.set_trace()
         for e in self.parser.privates:
             cls = self.class4(e.name)
-            if "%s" % cls in self.overrides[1]:
+            if cls in self.overrides[1]:
                 continue
             self.output("""class %s(ctypes.c_void_p):
     '''Private object
