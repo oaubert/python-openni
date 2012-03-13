@@ -584,6 +584,7 @@ class Parser(object):
                 # preprocessor directive. FIXME: handle?
                 continue
             else:  # parse line
+                t = t.replace('XN_C_DECL', '')
                 if '//' in t:
                     t = t[:t.index('//')]
                 t, m = t.strip(), None
