@@ -822,34 +822,50 @@ class PythonGenerator(_Generator):
     type2class = {
         # Internal classes
         'XnContext*': 'Context',
-        'XnContext**': 'ctypes.POINTER(Context)',
+        'XnContext**': 'ctypes.POINTER(ContextReference)',
 
-        'XnLockData': 'LockData',
+        'XnModuleInstance*': 'ctypes.c_void_p',
+        'XN_THREAD_ID': 'ctypes.c_void_p',
+        'XnNeededNodesDataHash*': 'ctypes.c_void_p',
+        'XnModuleStateCookieHash*': 'ctypes.c_void_p',
+        'XnLicenseList*': 'ctypes.c_void_p',
+        'XnModuleLoader*': 'ctypes.c_void_p',
+        'XnNodesMap*': 'ctypes.c_void_p',
+        'XnErrorStateChangedEvent*': 'ctypes.c_void_p',
+        'XN_EVENT_HANDLE': 'ctypes.c_void_p',
 
+        'XnFPSData': 'FPSData',
+
+        #'XnLockData': 'LockData',
         #'XnGestureRecognizedParams': 'GestureRecognizedParams',
         #'XnGestureProgressParams': 'GestureProgressParams',
 
         'XnNodeInfo*': 'NodeInfo',
         'XnNodeInfoListNode*': 'NodeInfoListNode',
         #'XnNodeInfoListNode*': 'ctypes.c_void_p',
+
         'XnNodeInfoList*': 'NodeInfoList', 
         'XnNodeInfoList**': 'ctypes.POINTER(NodeInfoListReference)', 
 
-        'XnNeededNodeData': 'NeededNodeData',
+        #'XnNeededNodeData': 'NeededNodeData',
         'XnNodeQuery*': 'NodeQuery',
         'XnNodeQuery**': 'ctypes.POINTER(NodeQuery)',
+
         'XnEnumerationErrors*': 'EnumerationErrors',
         'XnEnumerationErrors**': 'ctypes.POINTER(EnumerationErrors)',
         'XnEnumerationErrorsIterator': 'EnumerationErrorsIterator',
 
-        'XnProductionNodeType*': 'ctypes.POINTER(ProductionNodeType)',
+        'XnProductionNodeType*': 'ctypes.POINTER(XnProductionNodeType)',
         'XnPixelFormat*': 'ctypes.POINTER(PixelFormat)',
 
         'XnNodeHandle': 'NodeHandle',
-        'XnNodeHandle*': 'ctypes.POINTER(NodeHandleReference)',
+        'XnNodeHandle*': 'ctypes.POINTER(NodeHandle)',
 
         'XnSkeletonJoint*': 'ctypes.POINTER(SkeletonJoint)',
         'XnRecordMedium*': 'ctypes.POINTER(RecordMedium)',
+
+        'XnPoseDetectionStatus*': 'ctypes.POINTER(XnPoseDetectionStatus)',
+        'XnPoseDetectionState*': 'ctypes.POINTER(XnPoseDetectionState)',
 
         'XnSizeT': 'ctypes.c_ulong',
         'CALLBACK': 'ctypes.c_void_p',
@@ -868,7 +884,9 @@ class PythonGenerator(_Generator):
         'XnFloat':      'ctypes.c_float',
         'XnFloat*':     'ctypes.POINTER(ctypes.c_float)',
         'XnInt32':      'ctypes.c_int32',
+        'XnInt32*':     'ctypes.POINTER(ctypes.c_int32)',
         'XnInt64':      'ctypes.c_int64',
+        'XnInt64*':      'ctypes.POINTER(ctypes.c_int64)',
         'XnUChar*':     'ctypes.POINTER(ctypes.c_ubyte)',
         'XnUInt':       'ctypes.c_uint',
         'XnUInt*':      'ctypes.POINTER(ctypes.c_uint)',
@@ -906,6 +924,7 @@ class PythonGenerator(_Generator):
         'NodeQuery',
         'EnumerationErrors',
         'NodeInfoList',
+        'NodeInfo',
     )
 
     def __init__(self, parser=None):

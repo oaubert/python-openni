@@ -105,22 +105,41 @@ class ListPOINTER(object):
         if isinstance(param, _Seqs):
             return (self.etype * len(param))(*param)
 
-class NodeHandleReference(ctypes.c_void_p):
-    pass
-
-class NodeInfoListReference(ctypes.c_void_p):
-    pass
-
 class EnumerationErrorsIterator(ctypes.c_void_p):
     pass
 
- # Generated enum types #
+class FPSData(ctypes.c_void_p):
+    pass
+
+class NodeHandleReference(ctypes.c_void_p):
+    def dereference(self):
+        return NodeHandle(self)
+
+class ContextReference(ctypes.c_void_p):
+    def dereference(self):
+        return Context(self)
+
+class NodeInfoListReference(ctypes.c_void_p):
+    def dereference(self):
+        return NodeInfoList(self)
+
+class NodeInfoListNode(ctypes.c_void_p):
+    pass
+
+# From defines
+XN_CAPABILITY_ANTI_FLICKER = "AntiFlicker"
+
+# Generated wrapper classes #
+# GENERATED_WRAPPERS
+# End of generated wrapper classes #
+
+# Generated enum types #
 # GENERATED_ENUMS go here  # see generate.py
- # End of generated enum types #
+# End of generated enum types #
 
- # From libvlc_structures.h
+# Generated structs #
 # GENERATED_STRUCTS go here # see generate.py
- # End of generated structs
+# End of generated structs #
 
- # End of header.py #
+# End of header.py #
 
