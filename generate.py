@@ -766,6 +766,8 @@ class _Generator(object):
             elif genums and t.startswith('# GENERATED_STRUCTS'):
                 #self.generate_privates()
                 self.generate_structs()
+            elif genums and t.startswith('# GENERATED_WRAPPERS'):
+                self.generate_wrappers()
             elif t.startswith("build_date ="):
                 v, t = _NA_, self.parser.version
                 if t:
@@ -1275,7 +1277,7 @@ class _Enum(ctypes.c_ulong):
         self.outopen(path or '-')
         self.insert_code('header.py', genums=True)
 
-        self.generate_wrappers()
+        #self.generate_wrappers()
         self.generate_ctypes()
         self.generate_callbacks()
 
