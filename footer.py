@@ -23,7 +23,7 @@ if __name__ == '__main__':
     #q.addSupportedMapOutputMode(output)    
     #c.createDepthGenerator(q, err)
     
-    u=c.createUserGenerator(q, err)
+    u=c.createUserGenerator(q)
     if not u.isCapabilitySupported('User::Skeleton'):
         raise "Unable to create UserGenerator"
     h=u.registerUserCallbacks(cb.UserHandler(debug), cb.UserHandler(debug), "User")
