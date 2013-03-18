@@ -126,6 +126,9 @@ class NodeInfoListReference(ctypes.c_void_p):
 class NodeInfoListNode(ctypes.c_void_p):
     pass
 
+class XnProductionNodeType(ctypes.c_int32):
+    pass
+
 # From defines
 XN_CAPABILITY_ANTI_FLICKER = "AntiFlicker"
 
