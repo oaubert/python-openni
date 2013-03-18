@@ -866,6 +866,7 @@ class PythonGenerator(_Generator):
         'XnEnumerationErrorsIterator': 'EnumerationErrorsIterator',
 
         'XnProductionNodeType*': 'ctypes.POINTER(XnProductionNodeType)',
+        'XnProductionNodeType': 'XnProductionNodeType',
         'XnPixelFormat*': 'ctypes.POINTER(PixelFormat)',
 
         'XnNodeHandle': 'NodeHandle',
@@ -875,7 +876,9 @@ class PythonGenerator(_Generator):
         'XnRecordMedium*': 'ctypes.POINTER(RecordMedium)',
 
         'XnPoseDetectionStatus*': 'ctypes.POINTER(XnPoseDetectionStatus)',
+        'XnPoseDetectionStatus': 'XnPoseDetectionStatus',
         'XnPoseDetectionState*': 'ctypes.POINTER(XnPoseDetectionState)',
+        'XnPoseDetectionState': 'XnPoseDetectionState',
 
         'XnSizeT': 'ctypes.c_ulong',
         'CALLBACK': 'ctypes.c_void_p',
